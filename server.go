@@ -5,25 +5,38 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 )
 
 func TelemetryRouterHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	fmt.Println(r.Form)
-	fmt.Println("path", r.URL.Path)
-	fmt.Println("scheme", r.URL.Scheme)
-	fmt.Println(r.Form["url_long"])
+	log.Println("Received new POST data from", r.RemoteAddr)
+	fmt.Println("path:\t", r.URL.Path)
+	fmt.Println("headers:", r.Header)
 	for k, v := range r.Form {
-		fmt.Println("key:", k)
-		fmt.Println("value:", strings.Join(v, ""))
+		fmt.Println("key:\t", k)
+		fmt.Println("value:\t", strings.Join(v, ""))
 	}
 	fmt.Fprintf(w, "Hi client")
 }
 
 func main() {
+	srv := &http.Server{
+		Addr:         ":9001",
+		ReadTimeout:  60 * time.Second,
+		WriteTimeout: 60 * time.Second,
+	}
+
 	http.HandleFunc("/telemetry", TelemetryRouterHandler)
-	err := http.ListenAndServe(":9000", nil)
+
+	log.Println("Server started and waiting for connections.")
+	err := http.ListenAndServeTLS(srv.Addr,
+		"cert.pem",
+		"key.pem",
+		nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
+
+	defer srv.Close()
 }

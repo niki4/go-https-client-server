@@ -1,8 +1,10 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"time"
@@ -14,6 +16,7 @@ func main() {
 		MaxIdleConns:        10,
 		IdleConnTimeout:     30 * time.Second,
 		TLSHandshakeTimeout: 5 * time.Second,
+		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
 	}
 
 	client := &http.Client{
@@ -22,10 +25,10 @@ func main() {
 	}
 
 	resp, err := client.PostForm(
-		"http://localhost:9000/telemetry",
+		"https://localhost:9001/telemetry",
 		url.Values{"key": {"value"}, "id": {"123"}})
 	if err != nil {
-		fmt.Println("Request error: ", err)
+		log.Fatalf("Request error: %s", err)
 	}
 
 	defer resp.Body.Close()
@@ -35,5 +38,5 @@ func main() {
 	if err != nil {
 		fmt.Println("Error on parsing response body: ", err)
 	}
-	fmt.Println(body)
+	fmt.Println("Got message from server:", string(body))
 }
