@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"net"
 	"net/http"
 	"net/url"
 	"time"
@@ -31,7 +32,7 @@ func ResolveDNSName(hostName string) []string {
 	log.Printf("Trying to resolve %v with local resolver...\n", hostName)
 	ip, err := resolver.LookupHost(hostName)
 	if err != nil {
-		log.Println(err.Error())
+		log.Fatal(err.Error())
 
 		resolver = dns_resolver.New([]string{DNSFallbackAddr})
 		log.Printf("Trying to resolve %v with %v resolver...", hostName, DNSFallbackAddr)
@@ -71,10 +72,15 @@ func SendTelemetryData(client *http.Client, hostIP string) error {
 func main() {
 
 	tr := &http.Transport{
-		MaxIdleConns:        10,
-		IdleConnTimeout:     30 * time.Second,
-		TLSHandshakeTimeout: 5 * time.Second,
-		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		TLSHandshakeTimeout:   2 * time.Second,
+		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
+		ResponseHeaderTimeout: 5 * time.Second,
+		MaxIdleConns:          10,
+		IdleConnTimeout:       30 * time.Second,
 	}
 
 	client := &http.Client{
