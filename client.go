@@ -80,11 +80,12 @@ func main() {
 		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
 		ResponseHeaderTimeout: 5 * time.Second,
 		MaxIdleConns:          10,
-		IdleConnTimeout:       30 * time.Second,
+		IdleConnTimeout:       1 * time.Second,
 	}
 
 	client := &http.Client{
 		Transport: tr,
+		Timeout:   60 * time.Second,
 	}
 
 	IPs := ResolveDNSName(baseURL)
